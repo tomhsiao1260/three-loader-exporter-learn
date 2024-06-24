@@ -28,4 +28,4 @@ Three.js 的 Loader 大多是基於 `Loader.js` 的這個 class 去實作的，�
 
 ParserState 方法負責管理一些狀態，好比說 vertices, uvs 等資料。下面是一系列對字串的處理，首先是把不同行用 split 分開，然後再把每行透過 trimStart 去掉前面的空白，lineFirstChar 是每行的第一個字母，用來做一些判斷，face_vertex_data_separator_pattern 則負責把每行用 space 分開
 
-把資料都分開後，就可以把資料逐個寫進 ParserState 裡，vertices, normals, uvs 都分別會用一串 list 存取，類似像這樣 [x0, y0, z0, x1, y1, z1, ... ]。
+把資料都分開後，就可以把資料逐個寫進 ParserState 裡，vertices, normals, uvs 都分別會用一串 list 存取，類似像這樣 [x0, y0, z0, x1, y1, z1, ... ]。faces 處理的部分比較不同，首先每行 f 資訊都會以一個 faceVertices 的 list 存下，裡面有 3 項，每項都是個 list 記錄了每個點的 indices 值

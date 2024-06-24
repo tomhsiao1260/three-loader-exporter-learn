@@ -32,7 +32,7 @@ class OBJLoader extends Loader {
 
         const loader = new FileLoader();
 
-        loader.load( url, function ( text ) {
+        loader.load( 'quad.obj', function ( text ) {
 
             onLoad( scope.parse( text ) );
 
@@ -81,6 +81,28 @@ class OBJLoader extends Loader {
                         );
                         break;
                 }
+            } else if ( lineFirstChar === 'f' ) {
+
+                const lineData = line.slice( 1 ).trim();
+                const vertexData = lineData.split( _face_vertex_data_separator_pattern );
+                const faceVertices = [];
+
+                // Parse the face vertex data into an easy to work with format
+
+                for ( let j = 0, jl = vertexData.length; j < jl; j ++ ) {
+
+                    const vertex = vertexData[ j ];
+
+                    if ( vertex.length > 0 ) {
+
+                        const vertexParts = vertex.split( '/' );
+                        faceVertices.push( vertexParts );
+
+                    }
+
+                }
+
+                console.log('f line: ', faceVertices)
             }
         }
 
