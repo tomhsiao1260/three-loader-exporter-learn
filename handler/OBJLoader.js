@@ -7,15 +7,33 @@ const _face_vertex_data_separator_pattern = /\s+/;
 function ParserState() {
 
     const state = {
+        object: {},
+
         vertices: [],
         normals: [],
         colors: [],
         uvs: [],
 
+        startObject: function () {
+
+            this.object = {
+                geometry: {
+                    vertices: [],
+                    normals: [],
+                    colors: [],
+                    uvs: [],
+                    hasUVIndices: false
+                }
+            };
+
+        },
+
         addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
             console.log('f info: ', 'v ', a, b, c, 'vt ', ua, ub, uc, 'vn ', na, nb, nc)
         }
     }
+
+    state.startObject();
 
     return state
 }
