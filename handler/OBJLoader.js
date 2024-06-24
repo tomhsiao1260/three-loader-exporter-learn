@@ -53,11 +53,38 @@ class OBJLoader extends Loader {
 
             const lineFirstChar = line.charAt( 0 );
 
-            const data = line.split( _face_vertex_data_separator_pattern );
+            // @todo invoke passed in handler if any
+            if ( lineFirstChar === '#' ) continue; // skip comments
 
-            console.log('char: ', lineFirstChar, 'line: ', line);
-            console.log('split: ', data)
+            if ( lineFirstChar === 'v' ) {
+                const data = line.split( _face_vertex_data_separator_pattern );
+
+                switch ( data[ 0 ] ) {
+                    case 'v':
+                        state.vertices.push(
+                            parseFloat( data[ 1 ] ),
+                            parseFloat( data[ 2 ] ),
+                            parseFloat( data[ 3 ] )
+                        );
+                        break;
+                    case 'vn':
+                        state.normals.push(
+                            parseFloat( data[ 1 ] ),
+                            parseFloat( data[ 2 ] ),
+                            parseFloat( data[ 3 ] )
+                        );
+                        break;
+                    case 'vt':
+                        state.uvs.push(
+                            parseFloat( data[ 1 ] ),
+                            parseFloat( data[ 2 ] )
+                        );
+                        break;
+                }
+            }
         }
+
+        console.log('state: ', state);
 
         return text
     }
