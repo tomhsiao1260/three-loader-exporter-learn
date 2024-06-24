@@ -28,8 +28,21 @@ function ParserState() {
 
         },
 
+        parseVertexIndex: function ( value, len ) {
+
+            const index = parseInt( value, 10 );
+            return ( index >= 0 ? index - 1 : index + len / 3 ) * 3;
+
+        },
+
         addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
-            console.log('f info: ', 'v ', a, b, c, 'vt ', ua, ub, uc, 'vn ', na, nb, nc)
+            const vLen = this.vertices.length;
+
+            let ia = this.parseVertexIndex( a, vLen );
+            let ib = this.parseVertexIndex( b, vLen );
+            let ic = this.parseVertexIndex( c, vLen );
+
+            console.log('f info: ', 'v ', a, b, c, 'vt ', ua, ub, uc, 'vn ', na, nb, nc, 'indices', ia, ib, ic);
         }
     }
 
