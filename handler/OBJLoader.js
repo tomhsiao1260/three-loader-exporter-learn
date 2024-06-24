@@ -1,5 +1,7 @@
 import { Loader } from './Loader';
 
+import { FileLoader } from 'three';
+
 class OBJLoader extends Loader {
 
     constructor( manager ) {
@@ -14,7 +16,13 @@ class OBJLoader extends Loader {
 
         console.log('url: ', url);
 
-        onLoad( 'onLoad!' );
+        const loader = new FileLoader();
+
+        loader.load( url, function ( text ) {
+
+            onLoad(text);
+
+        }, onProgress, onError );
 
     }
 
