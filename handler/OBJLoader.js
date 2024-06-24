@@ -490,20 +490,6 @@ class OBJLoader extends Loader {
 
         const state = new ParserState();
 
-        if ( text.indexOf( '\r\n' ) !== - 1 ) {
-
-            // This is faster than String.split with regex that splits on both
-            text = text.replace( /\r\n/g, '\n' );
-
-        }
-
-        if ( text.indexOf( '\\\n' ) !== - 1 ) {
-
-            // join lines separated by a line continuation character (\)
-            text = text.replace( /\\\n/g, '' );
-
-        }
-
         const lines = text.split( '\n' );
         let result = [];
 
