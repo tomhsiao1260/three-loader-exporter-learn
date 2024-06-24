@@ -10,7 +10,11 @@ function ParserState() {
         vertices: [],
         normals: [],
         colors: [],
-        uvs: []
+        uvs: [],
+
+        addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
+            console.log('f info: ', 'v ', a, b, c, 'vt ', ua, ub, uc, 'vn ', na, nb, nc)
+        }
     }
 
     return state
@@ -32,7 +36,7 @@ class OBJLoader extends Loader {
 
         const loader = new FileLoader();
 
-        loader.load( 'quad.obj', function ( text ) {
+        loader.load( url, function ( text ) {
 
             onLoad( scope.parse( text ) );
 
@@ -102,11 +106,22 @@ class OBJLoader extends Loader {
 
                 }
 
-                console.log('f line: ', faceVertices)
+                // Draw an edge between the first vertex and all subsequent vertices to form an n-gon
+
+                const v1 = faceVertices[ 0 ];
+                const v2 = faceVertices[ 1 ];
+                const v3 = faceVertices[ 2 ];
+
+                state.addFace(
+                    v1[ 0 ], v2[ 0 ], v3[ 0 ],
+                    v1[ 1 ], v2[ 1 ], v3[ 1 ],
+                    v1[ 2 ], v2[ 2 ], v3[ 2 ]
+                );
+
             }
         }
 
-        console.log('state: ', state);
+        // console.log('state: ', state);
 
         return text
     }
