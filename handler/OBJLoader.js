@@ -14,16 +14,20 @@ class OBJLoader extends Loader {
 
     load( url, onLoad, onProgress, onError ) {
 
-        console.log('url: ', url);
+        const scope = this;
 
         const loader = new FileLoader();
 
         loader.load( url, function ( text ) {
 
-            onLoad(text);
+            onLoad( scope.parse( text ) );
 
         }, onProgress, onError );
 
+    }
+
+    parse( text ) {
+        return text
     }
 
 }
