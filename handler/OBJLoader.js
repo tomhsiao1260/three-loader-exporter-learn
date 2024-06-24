@@ -5,25 +5,12 @@ import {
     FileLoader,
     Float32BufferAttribute,
     Group,
-    LineBasicMaterial,
-    LineSegments,
-    Material,
     Mesh,
     MeshPhongMaterial,
-    Points,
-    PointsMaterial,
     Vector3,
     Color
 } from 'three';
 
-// o object_name | g group_name
-const _object_pattern = /^[og]\s*(.+)?/;
-// mtllib file_reference
-const _material_library_pattern = /^mtllib /;
-// usemtl material_name
-const _material_use_pattern = /^usemtl /;
-// usemap map_name
-const _map_use_pattern = /^usemap /;
 const _face_vertex_data_separator_pattern = /\s+/;
 
 const _vA = new Vector3();
@@ -46,167 +33,19 @@ function ParserState() {
         colors: [],
         uvs: [],
 
-        materials: {},
-        materialLibraries: [],
-
-        startObject: function ( name, fromDeclaration ) {
-
-            // If the current object (initial from reset) is not from a g/o declaration in the parsed
-            // file. We need to use it for the first parsed g/o to keep things in sync.
-            if ( this.object && this.object.fromDeclaration === false ) {
-
-                this.object.name = name;
-                this.object.fromDeclaration = ( fromDeclaration !== false );
-                return;
-
-            }
-
-            const previousMaterial = ( this.object && typeof this.object.currentMaterial === 'function' ? this.object.currentMaterial() : undefined );
-
-            if ( this.object && typeof this.object._finalize === 'function' ) {
-
-                this.object._finalize( true );
-
-            }
+        startObject: function () {
 
             this.object = {
-                name: name || '',
-                fromDeclaration: ( fromDeclaration !== false ),
-
                 geometry: {
                     vertices: [],
                     normals: [],
                     colors: [],
                     uvs: [],
                     hasUVIndices: false
-                },
-                materials: [],
-                smooth: true,
-
-                startMaterial: function ( name, libraries ) {
-
-                    const previous = this._finalize( false );
-
-                    // New usemtl declaration overwrites an inherited material, except if faces were declared
-                    // after the material, then it must be preserved for proper MultiMaterial continuation.
-                    if ( previous && ( previous.inherited || previous.groupCount <= 0 ) ) {
-
-                        this.materials.splice( previous.index, 1 );
-
-                    }
-
-                    const material = {
-                        index: this.materials.length,
-                        name: name || '',
-                        mtllib: ( Array.isArray( libraries ) && libraries.length > 0 ? libraries[ libraries.length - 1 ] : '' ),
-                        smooth: ( previous !== undefined ? previous.smooth : this.smooth ),
-                        groupStart: ( previous !== undefined ? previous.groupEnd : 0 ),
-                        groupEnd: - 1,
-                        groupCount: - 1,
-                        inherited: false,
-
-                        clone: function ( index ) {
-
-                            const cloned = {
-                                index: ( typeof index === 'number' ? index : this.index ),
-                                name: this.name,
-                                mtllib: this.mtllib,
-                                smooth: this.smooth,
-                                groupStart: 0,
-                                groupEnd: - 1,
-                                groupCount: - 1,
-                                inherited: false
-                            };
-                            cloned.clone = this.clone.bind( cloned );
-                            return cloned;
-
-                        }
-                    };
-
-                    this.materials.push( material );
-
-                    return material;
-
-                },
-
-                currentMaterial: function () {
-
-                    if ( this.materials.length > 0 ) {
-
-                        return this.materials[ this.materials.length - 1 ];
-
-                    }
-
-                    return undefined;
-
-                },
-
-                _finalize: function ( end ) {
-
-                    const lastMultiMaterial = this.currentMaterial();
-                    if ( lastMultiMaterial && lastMultiMaterial.groupEnd === - 1 ) {
-
-                        lastMultiMaterial.groupEnd = this.geometry.vertices.length / 3;
-                        lastMultiMaterial.groupCount = lastMultiMaterial.groupEnd - lastMultiMaterial.groupStart;
-                        lastMultiMaterial.inherited = false;
-
-                    }
-
-                    // Ignore objects tail materials if no face declarations followed them before a new o/g started.
-                    if ( end && this.materials.length > 1 ) {
-
-                        for ( let mi = this.materials.length - 1; mi >= 0; mi -- ) {
-
-                            if ( this.materials[ mi ].groupCount <= 0 ) {
-
-                                this.materials.splice( mi, 1 );
-
-                            }
-
-                        }
-
-                    }
-
-                    // Guarantee at least one empty material, this makes the creation later more straight forward.
-                    if ( end && this.materials.length === 0 ) {
-
-                        this.materials.push( {
-                            name: '',
-                            smooth: this.smooth
-                        } );
-
-                    }
-
-                    return lastMultiMaterial;
-
                 }
             };
 
-            // Inherit previous objects material.
-            // Spec tells us that a declared material must be set to all objects until a new material is declared.
-            // If a usemtl declaration is encountered while this new object is being parsed, it will
-            // overwrite the inherited material. Exception being that there was already face declarations
-            // to the inherited material, then it will be preserved for proper MultiMaterial continuation.
-
-            if ( previousMaterial && previousMaterial.name && typeof previousMaterial.clone === 'function' ) {
-
-                const declared = previousMaterial.clone( 0 );
-                declared.inherited = true;
-                this.object.materials.push( declared );
-
-            }
-
             this.objects.push( this.object );
-
-        },
-
-        finalize: function () {
-
-            if ( this.object && typeof this.object._finalize === 'function' ) {
-
-                this.object._finalize( true );
-
-            }
 
         },
 
@@ -239,24 +78,6 @@ function ParserState() {
             dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
             dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
             dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
-
-        },
-
-        addVertexPoint: function ( a ) {
-
-            const src = this.vertices;
-            const dst = this.object.geometry.vertices;
-
-            dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-
-        },
-
-        addVertexLine: function ( a ) {
-
-            const src = this.vertices;
-            const dst = this.object.geometry.vertices;
-
-            dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
 
         },
 
@@ -324,15 +145,6 @@ function ParserState() {
 
         },
 
-        addUVLine: function ( a ) {
-
-            const src = this.uvs;
-            const dst = this.object.geometry.uvs;
-
-            dst.push( src[ a + 0 ], src[ a + 1 ] );
-
-        },
-
         addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
 
             const vLen = this.vertices.length;
@@ -386,47 +198,9 @@ function ParserState() {
 
         },
 
-        addPointGeometry: function ( vertices ) {
-
-            this.object.geometry.type = 'Points';
-
-            const vLen = this.vertices.length;
-
-            for ( let vi = 0, l = vertices.length; vi < l; vi ++ ) {
-
-                const index = this.parseVertexIndex( vertices[ vi ], vLen );
-
-                this.addVertexPoint( index );
-                this.addColor( index );
-
-            }
-
-        },
-
-        addLineGeometry: function ( vertices, uvs ) {
-
-            this.object.geometry.type = 'Line';
-
-            const vLen = this.vertices.length;
-            const uvLen = this.uvs.length;
-
-            for ( let vi = 0, l = vertices.length; vi < l; vi ++ ) {
-
-                this.addVertexLine( this.parseVertexIndex( vertices[ vi ], vLen ) );
-
-            }
-
-            for ( let uvi = 0, l = uvs.length; uvi < l; uvi ++ ) {
-
-                this.addUVLine( this.parseUVIndex( uvs[ uvi ], uvLen ) );
-
-            }
-
-        }
-
     };
 
-    state.startObject( '', false );
+    state.startObject();
 
     return state;
 
@@ -449,40 +223,11 @@ class OBJLoader extends Loader {
         const scope = this;
 
         const loader = new FileLoader( this.manager );
-        loader.setPath( this.path );
-        loader.setRequestHeader( this.requestHeader );
-        loader.setWithCredentials( this.withCredentials );
         loader.load( url, function ( text ) {
 
-            try {
-
-                onLoad( scope.parse( text ) );
-
-            } catch ( e ) {
-
-                if ( onError ) {
-
-                    onError( e );
-
-                } else {
-
-                    console.error( e );
-
-                }
-
-                scope.manager.itemError( url );
-
-            }
+            onLoad( scope.parse( text ) );
 
         }, onProgress, onError );
-
-    }
-
-    setMaterials( materials ) {
-
-        this.materials = materials;
-
-        return this;
 
     }
 
@@ -491,7 +236,6 @@ class OBJLoader extends Loader {
         const state = new ParserState();
 
         const lines = text.split( '\n' );
-        let result = [];
 
         for ( let i = 0, l = lines.length; i < l; i ++ ) {
 
@@ -589,297 +333,48 @@ class OBJLoader extends Loader {
 
                 }
 
-            } else if ( lineFirstChar === 'l' ) {
-
-                const lineParts = line.substring( 1 ).trim().split( ' ' );
-                let lineVertices = [];
-                const lineUVs = [];
-
-                if ( line.indexOf( '/' ) === - 1 ) {
-
-                    lineVertices = lineParts;
-
-                } else {
-
-                    for ( let li = 0, llen = lineParts.length; li < llen; li ++ ) {
-
-                        const parts = lineParts[ li ].split( '/' );
-
-                        if ( parts[ 0 ] !== '' ) lineVertices.push( parts[ 0 ] );
-                        if ( parts[ 1 ] !== '' ) lineUVs.push( parts[ 1 ] );
-
-                    }
-
-                }
-
-                state.addLineGeometry( lineVertices, lineUVs );
-
-            } else if ( lineFirstChar === 'p' ) {
-
-                const lineData = line.slice( 1 ).trim();
-                const pointData = lineData.split( ' ' );
-
-                state.addPointGeometry( pointData );
-
-            } else if ( ( result = _object_pattern.exec( line ) ) !== null ) {
-
-                // o object_name
-                // or
-                // g group_name
-
-                // WORKAROUND: https://bugs.chromium.org/p/v8/issues/detail?id=2869
-                // let name = result[ 0 ].slice( 1 ).trim();
-                const name = ( ' ' + result[ 0 ].slice( 1 ).trim() ).slice( 1 );
-
-                state.startObject( name );
-
-            } else if ( _material_use_pattern.test( line ) ) {
-
-                // material
-
-                state.object.startMaterial( line.substring( 7 ).trim(), state.materialLibraries );
-
-            } else if ( _material_library_pattern.test( line ) ) {
-
-                // mtl file
-
-                state.materialLibraries.push( line.substring( 7 ).trim() );
-
-            } else if ( _map_use_pattern.test( line ) ) {
-
-                // the line is parsed but ignored since the loader assumes textures are defined MTL files
-                // (according to https://www.okino.com/conv/imp_wave.htm, 'usemap' is the old-style Wavefront texture reference method)
-
-                console.warn( 'THREE.OBJLoader: Rendering identifier "usemap" not supported. Textures must be defined in MTL files.' );
-
-            } else if ( lineFirstChar === 's' ) {
-
-                result = line.split( ' ' );
-
-                // smooth shading
-
-                // @todo Handle files that have varying smooth values for a set of faces inside one geometry,
-                // but does not define a usemtl for each face set.
-                // This should be detected and a dummy material created (later MultiMaterial and geometry groups).
-                // This requires some care to not create extra material on each smooth value for "normal" obj files.
-                // where explicit usemtl defines geometry groups.
-                // Example asset: examples/models/obj/cerberus/Cerberus.obj
-
-                /*
-                     * http://paulbourke.net/dataformats/obj/
-                     *
-                     * From chapter "Grouping" Syntax explanation "s group_number":
-                     * "group_number is the smoothing group number. To turn off smoothing groups, use a value of 0 or off.
-                     * Polygonal elements use group numbers to put elements in different smoothing groups. For free-form
-                     * surfaces, smoothing groups are either turned on or off; there is no difference between values greater
-                     * than 0."
-                     */
-                if ( result.length > 1 ) {
-
-                    const value = result[ 1 ].trim().toLowerCase();
-                    state.object.smooth = ( value !== '0' && value !== 'off' );
-
-                } else {
-
-                    // ZBrush can produce "s" lines #11707
-                    state.object.smooth = true;
-
-                }
-
-                const material = state.object.currentMaterial();
-                if ( material ) material.smooth = state.object.smooth;
-
-            } else {
-
-                // Handle null terminated files without exception
-                if ( line === '\0' ) continue;
-
-                console.warn( 'THREE.OBJLoader: Unexpected line: "' + line + '"' );
-
             }
 
         }
 
-        state.finalize();
-
         const container = new Group();
-        container.materialLibraries = [].concat( state.materialLibraries );
 
-        const hasPrimitives = ! ( state.objects.length === 1 && state.objects[ 0 ].geometry.vertices.length === 0 );
+        for ( let i = 0, l = state.objects.length; i < l; i ++ ) {
 
-        if ( hasPrimitives === true ) {
+            const object = state.objects[ i ];
+            const geometry = object.geometry;
+            let hasVertexColors = false;
 
-            for ( let i = 0, l = state.objects.length; i < l; i ++ ) {
+            // Skip o/g line declarations that did not follow with any faces
+            if ( geometry.vertices.length === 0 ) continue;
 
-                const object = state.objects[ i ];
-                const geometry = object.geometry;
-                const materials = object.materials;
-                const isLine = ( geometry.type === 'Line' );
-                const isPoints = ( geometry.type === 'Points' );
-                let hasVertexColors = false;
+            const buffergeometry = new BufferGeometry();
 
-                // Skip o/g line declarations that did not follow with any faces
-                if ( geometry.vertices.length === 0 ) continue;
+            buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
 
-                const buffergeometry = new BufferGeometry();
+            if ( geometry.normals.length > 0 ) {
 
-                buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
-
-                if ( geometry.normals.length > 0 ) {
-
-                    buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
-
-                }
-
-                if ( geometry.colors.length > 0 ) {
-
-                    hasVertexColors = true;
-                    buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
-
-                }
-
-                if ( geometry.hasUVIndices === true ) {
-
-                    buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
-
-                }
-
-                // Create materials
-
-                const createdMaterials = [];
-
-                for ( let mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
-
-                    const sourceMaterial = materials[ mi ];
-                    const materialHash = sourceMaterial.name + '_' + sourceMaterial.smooth + '_' + hasVertexColors;
-                    let material = state.materials[ materialHash ];
-
-                    if ( this.materials !== null ) {
-
-                        material = this.materials.create( sourceMaterial.name );
-
-                        // mtl etc. loaders probably can't create line materials correctly, copy properties to a line material.
-                        if ( isLine && material && ! ( material instanceof LineBasicMaterial ) ) {
-
-                            const materialLine = new LineBasicMaterial();
-                            Material.prototype.copy.call( materialLine, material );
-                            materialLine.color.copy( material.color );
-                            material = materialLine;
-
-                        } else if ( isPoints && material && ! ( material instanceof PointsMaterial ) ) {
-
-                            const materialPoints = new PointsMaterial( { size: 10, sizeAttenuation: false } );
-                            Material.prototype.copy.call( materialPoints, material );
-                            materialPoints.color.copy( material.color );
-                            materialPoints.map = material.map;
-                            material = materialPoints;
-
-                        }
-
-                    }
-
-                    if ( material === undefined ) {
-
-                        if ( isLine ) {
-
-                            material = new LineBasicMaterial();
-
-                        } else if ( isPoints ) {
-
-                            material = new PointsMaterial( { size: 1, sizeAttenuation: false } );
-
-                        } else {
-
-                            material = new MeshPhongMaterial();
-
-                        }
-
-                        material.name = sourceMaterial.name;
-                        material.flatShading = sourceMaterial.smooth ? false : true;
-                        material.vertexColors = hasVertexColors;
-
-                        state.materials[ materialHash ] = material;
-
-                    }
-
-                    createdMaterials.push( material );
-
-                }
-
-                // Create mesh
-
-                let mesh;
-
-                if ( createdMaterials.length > 1 ) {
-
-                    for ( let mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
-
-                        const sourceMaterial = materials[ mi ];
-                        buffergeometry.addGroup( sourceMaterial.groupStart, sourceMaterial.groupCount, mi );
-
-                    }
-
-                    if ( isLine ) {
-
-                        mesh = new LineSegments( buffergeometry, createdMaterials );
-
-                    } else if ( isPoints ) {
-
-                        mesh = new Points( buffergeometry, createdMaterials );
-
-                    } else {
-
-                        mesh = new Mesh( buffergeometry, createdMaterials );
-
-                    }
-
-                } else {
-
-                    if ( isLine ) {
-
-                        mesh = new LineSegments( buffergeometry, createdMaterials[ 0 ] );
-
-                    } else if ( isPoints ) {
-
-                        mesh = new Points( buffergeometry, createdMaterials[ 0 ] );
-
-                    } else {
-
-                        mesh = new Mesh( buffergeometry, createdMaterials[ 0 ] );
-
-                    }
-
-                }
-
-                mesh.name = object.name;
-
-                container.add( mesh );
+                buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
 
             }
 
-        } else {
+            if ( geometry.colors.length > 0 ) {
 
-            // if there is only the default parser state object with no geometry data, interpret data as point cloud
-
-            if ( state.vertices.length > 0 ) {
-
-                const material = new PointsMaterial( { size: 1, sizeAttenuation: false } );
-
-                const buffergeometry = new BufferGeometry();
-
-                buffergeometry.setAttribute( 'position', new Float32BufferAttribute( state.vertices, 3 ) );
-
-                if ( state.colors.length > 0 && state.colors[ 0 ] !== undefined ) {
-
-                    buffergeometry.setAttribute( 'color', new Float32BufferAttribute( state.colors, 3 ) );
-                    material.vertexColors = true;
-
-                }
-
-                const points = new Points( buffergeometry, material );
-                container.add( points );
+                hasVertexColors = true;
+                buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
 
             }
+
+            if ( geometry.hasUVIndices === true ) {
+
+                buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
+
+            }
+
+            // Create mesh
+
+            const mesh = new Mesh( buffergeometry, new MeshPhongMaterial() );
+            container.add( mesh );
 
         }
 
