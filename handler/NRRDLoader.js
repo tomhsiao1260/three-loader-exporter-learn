@@ -20,10 +20,15 @@ class NRRDLoader extends Loader {
         const loader = new FileLoader( scope.manager );
         loader.load( url, function ( data ) {
 
-            console.log('NRRD data', data)
+            onLoad( scope.parse( data ) );
 
-        });
+        }, onProgress, onError );
 
+    }
+
+    parse( data ) {
+
+        console.log('Will write parsing script here, data: ', data)
     }
 }
 
