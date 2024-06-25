@@ -1,7 +1,12 @@
 import { Loader } from './Loader';
 
 import {
+    BufferGeometry,
     FileLoader,
+    Float32BufferAttribute,
+    Group,
+    Mesh,
+    MeshPhongMaterial,
     Vector3
 } from 'three';
 
@@ -295,7 +300,43 @@ class OBJLoader extends Loader {
         console.log('state: ', state);
         console.log('state object geometry: ', state.object.geometry);
 
-        return text
+        const container = new Group();
+
+        const geometry = state.object.geometry;
+        let hasVertexColors = false;
+
+        // Skip o/g line declarations that did not follow with any faces
+        if ( geometry.vertices.length === 0 ) container;
+
+        const buffergeometry = new BufferGeometry();
+
+        buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
+
+        if ( geometry.normals.length > 0 ) {
+
+            buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
+
+        }
+
+        if ( geometry.colors.length > 0 ) {
+
+            hasVertexColors = true;
+            buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
+
+        }
+
+        if ( geometry.hasUVIndices === true ) {
+
+            buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
+
+        }
+
+        // Create mesh
+
+        const mesh = new Mesh( buffergeometry, new MeshPhongMaterial() );
+        container.add( mesh );
+
+        return container;
     }
 
 }
