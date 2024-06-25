@@ -5,7 +5,7 @@ import { OBJExporter } from './handler/OBJExporter'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 async function handler() {
-    const loader_data = await new OBJLoader().loadAsync('triangle.obj')
+    const loader_data = await new OBJLoader().loadAsync('quad.obj')
     console.log('Loader: ', loader_data)
 
     const exporter = new OBJExporter()

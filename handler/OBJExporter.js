@@ -38,16 +38,6 @@ class OBJExporter {
             const uvs = geometry.getAttribute( 'uv' );
             const indices = geometry.getIndex();
 
-            // name of the mesh object
-            output += 'o ' + mesh.name + '\n';
-
-            // name of the mesh material
-            if ( mesh.material && mesh.material.name ) {
-
-                output += 'usemtl ' + mesh.material.name + '\n';
-
-            }
-
             // vertices
 
             if ( vertices !== undefined ) {
@@ -146,130 +136,11 @@ class OBJExporter {
 
         }
 
-        function parseLine( line ) {
-
-            let nbVertex = 0;
-
-            const geometry = line.geometry;
-            const type = line.type;
-
-            // shortcuts
-            const vertices = geometry.getAttribute( 'position' );
-
-            // name of the line object
-            output += 'o ' + line.name + '\n';
-
-            if ( vertices !== undefined ) {
-
-                for ( let i = 0, l = vertices.count; i < l; i ++, nbVertex ++ ) {
-
-                    vertex.fromBufferAttribute( vertices, i );
-
-                    // transform the vertex to world space
-                    vertex.applyMatrix4( line.matrixWorld );
-
-                    // transform the vertex to export format
-                    output += 'v ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z + '\n';
-
-                }
-
-            }
-
-            if ( type === 'Line' ) {
-
-                output += 'l ';
-
-                for ( let j = 1, l = vertices.count; j <= l; j ++ ) {
-
-                    output += ( indexVertex + j ) + ' ';
-
-                }
-
-                output += '\n';
-
-            }
-
-            if ( type === 'LineSegments' ) {
-
-                for ( let j = 1, k = j + 1, l = vertices.count; j < l; j += 2, k = j + 1 ) {
-
-                    output += 'l ' + ( indexVertex + j ) + ' ' + ( indexVertex + k ) + '\n';
-
-                }
-
-            }
-
-            // update index
-            indexVertex += nbVertex;
-
-        }
-
-        function parsePoints( points ) {
-
-            let nbVertex = 0;
-
-            const geometry = points.geometry;
-
-            const vertices = geometry.getAttribute( 'position' );
-            const colors = geometry.getAttribute( 'color' );
-
-            output += 'o ' + points.name + '\n';
-
-            if ( vertices !== undefined ) {
-
-                for ( let i = 0, l = vertices.count; i < l; i ++, nbVertex ++ ) {
-
-                    vertex.fromBufferAttribute( vertices, i );
-                    vertex.applyMatrix4( points.matrixWorld );
-
-                    output += 'v ' + vertex.x + ' ' + vertex.y + ' ' + vertex.z;
-
-                    if ( colors !== undefined ) {
-
-                        color.fromBufferAttribute( colors, i ).convertLinearToSRGB();
-
-                        output += ' ' + color.r + ' ' + color.g + ' ' + color.b;
-
-                    }
-
-                    output += '\n';
-
-                }
-
-                output += 'p ';
-
-                for ( let j = 1, l = vertices.count; j <= l; j ++ ) {
-
-                    output += ( indexVertex + j ) + ' ';
-
-                }
-
-                output += '\n';
-
-            }
-
-            // update index
-            indexVertex += nbVertex;
-
-        }
-
         object.traverse( function ( child ) {
 
             if ( child.isMesh === true ) {
 
                 parseMesh( child );
-
-            }
-
-            if ( child.isLine === true ) {
-
-                parseLine( child );
-
-            }
-
-            if ( child.isPoints === true ) {
-
-                parsePoints( child );
 
             }
 

@@ -25,7 +25,6 @@ const _color = new Color();
 function ParserState() {
 
     const state = {
-        objects: [],
         object: {},
 
         vertices: [],
@@ -44,8 +43,6 @@ function ParserState() {
                     hasUVIndices: false
                 }
             };
-
-            this.objects.push( this.object );
 
         },
 
@@ -224,6 +221,7 @@ class OBJLoader extends Loader {
 
         const loader = new FileLoader( this.manager );
         loader.load( url, function ( text ) {
+            console.log('raw input: ', text);
 
             onLoad( scope.parse( text ) );
 
@@ -339,44 +337,39 @@ class OBJLoader extends Loader {
 
         const container = new Group();
 
-        for ( let i = 0, l = state.objects.length; i < l; i ++ ) {
+        const geometry = state.object.geometry;
+        let hasVertexColors = false;
 
-            const object = state.objects[ i ];
-            const geometry = object.geometry;
-            let hasVertexColors = false;
+        // Skip o/g line declarations that did not follow with any faces
+        if ( geometry.vertices.length === 0 ) container;
 
-            // Skip o/g line declarations that did not follow with any faces
-            if ( geometry.vertices.length === 0 ) continue;
+        const buffergeometry = new BufferGeometry();
 
-            const buffergeometry = new BufferGeometry();
+        buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
 
-            buffergeometry.setAttribute( 'position', new Float32BufferAttribute( geometry.vertices, 3 ) );
+        if ( geometry.normals.length > 0 ) {
 
-            if ( geometry.normals.length > 0 ) {
-
-                buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
-
-            }
-
-            if ( geometry.colors.length > 0 ) {
-
-                hasVertexColors = true;
-                buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
-
-            }
-
-            if ( geometry.hasUVIndices === true ) {
-
-                buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
-
-            }
-
-            // Create mesh
-
-            const mesh = new Mesh( buffergeometry, new MeshPhongMaterial() );
-            container.add( mesh );
+            buffergeometry.setAttribute( 'normal', new Float32BufferAttribute( geometry.normals, 3 ) );
 
         }
+
+        if ( geometry.colors.length > 0 ) {
+
+            hasVertexColors = true;
+            buffergeometry.setAttribute( 'color', new Float32BufferAttribute( geometry.colors, 3 ) );
+
+        }
+
+        if ( geometry.hasUVIndices === true ) {
+
+            buffergeometry.setAttribute( 'uv', new Float32BufferAttribute( geometry.uvs, 2 ) );
+
+        }
+
+        // Create mesh
+
+        const mesh = new Mesh( buffergeometry, new MeshPhongMaterial() );
+        container.add( mesh );
 
         return container;
 
