@@ -28,7 +28,7 @@ class NRRDLoader extends Loader {
 
     parse( data ) {
 
-        console.log('Will write parsing script here, data: ', data)
+        return data
     }
 }
 

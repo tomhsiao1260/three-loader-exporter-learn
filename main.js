@@ -6,17 +6,18 @@ import { NRRDLoader } from './handler/NRRDLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 async function handler() {
-    const loader_data = await new OBJLoader().loadAsync('quad.obj')
-    console.log('Loader: ', loader_data)
+    const loader_obj = await new OBJLoader().loadAsync('quad.obj')
+    console.log('OBJ Loader: ', loader_obj)
 
     const exporter = new OBJExporter()
-    const exporter_data = exporter.parse(loader_data)
-    console.log('Exporter: ', exporter_data)
+    const exporter_obj = exporter.parse(loader_obj)
+    console.log('OBJ Exporter: ', exporter_obj)
 
-    const mesh = loader_data.children[0]
+    const mesh = loader_obj.children[0]
     mesh.material = new THREE.MeshNormalMaterial()
 
     const loader_nrrd = await new NRRDLoader().loadAsync('cube.nrrd')
+    console.log('NRRD Loader: ', loader_nrrd)
 
     return mesh
 }

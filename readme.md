@@ -40,6 +40,14 @@ addFace 主要就是把面的位置資訊拼湊出來，內部呼叫 addVertex �
 
 輸出為 `.obj` 檔的字串，呼叫 parse 方法時，就會遍歷裡面的 mesh，並依序取出 geometry 裡不同屬性的 buffer，好比說 vertices, normals, uvs，並轉為字串記錄下來。faces 紀錄方式分 index 和 non-indexed 兩種，後者紀錄的 v, f 比較冗贅佔空間，但方便寫進 buffer
 
+## NRRDLoader
+
+#### load
+
+跟 OBJLoader 的 load 部分幾乎相同，透過 FileLoader 讀取資料，並傳給 parse 做後續處理
+
+
+
 
 
 
