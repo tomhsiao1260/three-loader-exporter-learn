@@ -52,6 +52,13 @@ function ParserState() {
 
         },
 
+        parseUVIndex: function ( value, len ) {
+
+            const index = parseInt( value, 10 );
+            return ( index >= 0 ? index - 1 : index + len / 2 ) * 2;
+
+        },
+
         addVertex: function ( a, b, c ) {
 
             const src = this.vertices;
@@ -106,6 +113,27 @@ function ParserState() {
 
         },
 
+        addUV: function ( a, b, c ) {
+
+            const src = this.uvs;
+            const dst = this.object.geometry.uvs;
+
+            dst.push( src[ a + 0 ], src[ a + 1 ] );
+            dst.push( src[ b + 0 ], src[ b + 1 ] );
+            dst.push( src[ c + 0 ], src[ c + 1 ] );
+
+        },
+
+        addDefaultUV: function () {
+
+            const dst = this.object.geometry.uvs;
+
+            dst.push( 0, 0 );
+            dst.push( 0, 0 );
+            dst.push( 0, 0 );
+
+        },
+
         addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
             const vLen = this.vertices.length;
 
@@ -131,6 +159,28 @@ function ParserState() {
             } else {
 
                 this.addFaceNormal( ia, ib, ic );
+
+            }
+
+            // uvs
+
+            if ( ua !== undefined && ua !== '' ) {
+
+                const uvLen = this.uvs.length;
+
+                ia = this.parseUVIndex( ua, uvLen );
+                ib = this.parseUVIndex( ub, uvLen );
+                ic = this.parseUVIndex( uc, uvLen );
+
+                this.addUV( ia, ib, ic );
+
+                this.object.geometry.hasUVIndices = true;
+
+            } else {
+
+                // add placeholder values (for inconsistent face definitions)
+
+                this.addDefaultUV();
 
             }
         }
@@ -242,8 +292,8 @@ class OBJLoader extends Loader {
             }
         }
 
-        console.log('state: ', state.vertices);
-        console.log('state object: ', state.object.geometry.vertices);
+        console.log('state: ', state);
+        console.log('state object geometry: ', state.object.geometry);
 
         return text
     }
