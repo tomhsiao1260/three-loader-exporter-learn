@@ -2,6 +2,7 @@ import './style.css'
 import * as THREE from 'three'
 import { OBJLoader } from './handler/OBJLoader'
 import { OBJExporter } from './handler/OBJExporter'
+import { NRRDLoader } from './handler/NRRDLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 async function handler() {
@@ -14,7 +15,8 @@ async function handler() {
 
     const mesh = loader_data.children[0]
     mesh.material = new THREE.MeshNormalMaterial()
-    console.log('Mesh: ', mesh)
+
+    const loader_nrrd = await new NRRDLoader().loadAsync()
 
     return mesh
 }
