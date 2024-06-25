@@ -1,5 +1,11 @@
 import { Loader } from './Loader';
 
+import {
+    FileLoader,
+    Matrix4,
+    Vector3
+} from 'three';
+
 class NRRDLoader extends Loader {
     constructor( manager ) {
 
@@ -9,7 +15,15 @@ class NRRDLoader extends Loader {
 
     load( url, onLoad, onProgress, onError ) {
 
-        console.log('processing NRRD format here ...')
+        const scope = this;
+
+        const loader = new FileLoader( scope.manager );
+        loader.load( url, function ( data ) {
+
+            console.log('NRRD data', data)
+
+        });
+
     }
 }
 

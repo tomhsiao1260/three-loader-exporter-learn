@@ -16,7 +16,7 @@ async function handler() {
     const mesh = loader_data.children[0]
     mesh.material = new THREE.MeshNormalMaterial()
 
-    const loader_nrrd = await new NRRDLoader().loadAsync()
+    const loader_nrrd = await new NRRDLoader().loadAsync('cube.nrrd')
 
     return mesh
 }
