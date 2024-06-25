@@ -1,8 +1,18 @@
 import { Loader } from './Loader';
 
-import { FileLoader } from 'three';
+import {
+    FileLoader,
+    Vector3
+} from 'three';
 
 const _face_vertex_data_separator_pattern = /\s+/;
+
+const _vA = new Vector3();
+const _vB = new Vector3();
+const _vC = new Vector3();
+
+const _ab = new Vector3();
+const _cb = new Vector3();
 
 function ParserState() {
 
@@ -35,6 +45,13 @@ function ParserState() {
 
         },
 
+        parseNormalIndex: function ( value, len ) {
+
+            const index = parseInt( value, 10 );
+            return ( index >= 0 ? index - 1 : index + len / 3 ) * 3;
+
+        },
+
         addVertex: function ( a, b, c ) {
 
             const src = this.vertices;
@@ -43,6 +60,38 @@ function ParserState() {
             dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
             dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
             dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+        },
+
+        addNormal: function ( a, b, c ) {
+
+            const src = this.normals;
+            const dst = this.object.geometry.normals;
+
+            dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+            dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
+            dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+        },
+
+        addFaceNormal: function ( a, b, c ) {
+
+            const src = this.vertices;
+            const dst = this.object.geometry.normals;
+
+            _vA.fromArray( src, a );
+            _vB.fromArray( src, b );
+            _vC.fromArray( src, c );
+
+            _cb.subVectors( _vC, _vB );
+            _ab.subVectors( _vA, _vB );
+            _cb.cross( _ab );
+
+            _cb.normalize();
+
+            dst.push( _cb.x, _cb.y, _cb.z );
+            dst.push( _cb.x, _cb.y, _cb.z );
+            dst.push( _cb.x, _cb.y, _cb.z );
 
         },
 
@@ -66,6 +115,24 @@ function ParserState() {
 
             this.addVertex( ia, ib, ic );
             this.addColor( ia, ib, ic );
+
+            // normals
+
+            if ( na !== undefined && na !== '' ) {
+
+                const nLen = this.normals.length;
+
+                ia = this.parseNormalIndex( na, nLen );
+                ib = this.parseNormalIndex( nb, nLen );
+                ic = this.parseNormalIndex( nc, nLen );
+
+                this.addNormal( ia, ib, ic );
+
+            } else {
+
+                this.addFaceNormal( ia, ib, ic );
+
+            }
         }
     }
 
