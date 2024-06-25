@@ -1,11 +1,16 @@
 import './style.css'
 import * as THREE from 'three'
 import { OBJLoader } from './handler/OBJLoader'
+import { OBJExporter } from './handler/OBJExporter'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 async function handler() {
     const loader_data = await new OBJLoader().loadAsync('quad.obj')
     console.log('Loader: ', loader_data)
+
+    const exporter = new OBJExporter()
+    const exporter_data = exporter.parse(loader_data)
+    console.log('Exporter: ', exporter_data)
 
     const mesh = loader_data.children[0]
     mesh.material = new THREE.MeshNormalMaterial()

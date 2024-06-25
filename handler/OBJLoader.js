@@ -214,6 +214,8 @@ class OBJLoader extends Loader {
 
         loader.load( url, function ( text ) {
 
+            console.log('raw input: ', text)
+
             onLoad( scope.parse( text ) );
 
         }, onProgress, onError );
@@ -296,9 +298,6 @@ class OBJLoader extends Loader {
 
             }
         }
-
-        console.log('state: ', state);
-        console.log('state object geometry: ', state.object.geometry);
 
         const container = new Group();
 
