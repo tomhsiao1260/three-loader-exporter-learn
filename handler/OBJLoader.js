@@ -35,6 +35,28 @@ function ParserState() {
 
         },
 
+        addVertex: function ( a, b, c ) {
+
+            const src = this.vertices;
+            const dst = this.object.geometry.vertices;
+
+            dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+            dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
+            dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+        },
+
+        addColor: function ( a, b, c ) {
+
+            const src = this.colors;
+            const dst = this.object.geometry.colors;
+
+            if ( src[ a ] !== undefined ) dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
+            if ( src[ b ] !== undefined ) dst.push( src[ b + 0 ], src[ b + 1 ], src[ b + 2 ] );
+            if ( src[ c ] !== undefined ) dst.push( src[ c + 0 ], src[ c + 1 ], src[ c + 2 ] );
+
+        },
+
         addFace: function ( a, b, c, ua, ub, uc, na, nb, nc ) {
             const vLen = this.vertices.length;
 
@@ -42,7 +64,8 @@ function ParserState() {
             let ib = this.parseVertexIndex( b, vLen );
             let ic = this.parseVertexIndex( c, vLen );
 
-            console.log('f info: ', 'v ', a, b, c, 'vt ', ua, ub, uc, 'vn ', na, nb, nc, 'indices', ia, ib, ic);
+            this.addVertex( ia, ib, ic );
+            this.addColor( ia, ib, ic );
         }
     }
 
@@ -152,7 +175,8 @@ class OBJLoader extends Loader {
             }
         }
 
-        // console.log('state: ', state);
+        console.log('state: ', state.vertices);
+        console.log('state object: ', state.object.geometry.vertices);
 
         return text
     }
