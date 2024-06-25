@@ -36,4 +36,10 @@ addFace 主要就是把面的位置資訊拼湊出來，內部呼叫 addVertex �
 
 當這些 non-indexed 資料都處理好後，就可以建立一個 BufferGeometry，把資料都寫進去 buffer，然後建立一個 mesh，並回傳解析後的結果了
 
+## OBJExporter
+
+輸出為 `.obj` 檔的字串，呼叫 parse 方法時，就會遍歷裡面的 mesh，並依序取出 geometry 裡不同屬性的 buffer，好比說 vertices, normals, uvs，並轉為字串記錄下來
+
+
+
 
