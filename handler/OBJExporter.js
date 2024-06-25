@@ -10,16 +10,19 @@ class OBJExporter {
 
         let output = '';
 
+        let indexVertex = 0;
+        let indexVertexUvs = 0;
+        let indexNormals = 0;
+
         const vertex = new Vector3();
+        const normal = new Vector3();
+        const uv = new Vector2();
 
         function parseMesh( mesh ) {
 
             let nbVertex = 0;
             let nbNormals = 0;
             let nbVertexUvs = 0;
-
-            const normal = new Vector3();
-            const uv = new Vector2();
 
             const geometry = mesh.geometry;
 
@@ -31,10 +34,7 @@ class OBJExporter {
             const uvs = geometry.getAttribute( 'uv' );
             const indices = geometry.getIndex();
 
-            console.log('vertices: ', vertices.array);
-            console.log('normals: ', normals.array);
-            console.log('uvs: ', uvs.array);
-            console.log('indices: ', indices);
+            const face = [];
 
             // vertices
 
@@ -88,6 +88,49 @@ class OBJExporter {
                 }
 
             }
+
+            // faces
+
+            if ( indices !== null ) {
+
+                for ( let i = 0, l = indices.count; i < l; i += 3 ) {
+
+                    for ( let m = 0; m < 3; m ++ ) {
+
+                        const j = indices.getX( i + m ) + 1;
+
+                        face[ m ] = ( indexVertex + j ) + ( normals || uvs ? '/' + ( uvs ? ( indexVertexUvs + j ) : '' ) + ( normals ? '/' + ( indexNormals + j ) : '' ) : '' );
+
+                    }
+
+                    // transform the face to export format
+                    output += 'f ' + face.join( ' ' ) + '\n';
+
+                }
+
+            } else {
+
+                for ( let i = 0, l = vertices.count; i < l; i += 3 ) {
+
+                    for ( let m = 0; m < 3; m ++ ) {
+
+                        const j = i + m + 1;
+
+                        face[ m ] = ( indexVertex + j ) + ( normals || uvs ? '/' + ( uvs ? ( indexVertexUvs + j ) : '' ) + ( normals ? '/' + ( indexNormals + j ) : '' ) : '' );
+
+                    }
+
+                    // transform the face to export format
+                    output += 'f ' + face.join( ' ' ) + '\n';
+
+                }
+
+            }
+
+            // update index
+            indexVertex += nbVertex;
+            indexVertexUvs += nbVertexUvs;
+            indexNormals += nbNormals;
 
         }
 
