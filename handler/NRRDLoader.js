@@ -22,10 +22,7 @@ class NRRDLoader extends Loader {
         const scope = this;
 
         const loader = new FileLoader( scope.manager );
-        loader.setPath( scope.path );
         loader.setResponseType( 'arraybuffer' );
-        loader.setRequestHeader( scope.requestHeader );
-        loader.setWithCredentials( scope.withCredentials );
         loader.load( url, function ( data ) {
 
             try {
@@ -70,93 +67,21 @@ class NRRDLoader extends Loader {
 
         let _dataPointer = 0;
 
-        const _nativeLittleEndian = new Int8Array( new Int16Array( [ 1 ] ).buffer )[ 0 ] > 0;
-
-        const _littleEndian = true;
-
         const headerObject = {};
 
-        function scan( type, chunks ) {
+        function scan( chunks ) {
+
+            // uchar: 1 byte data types
 
             let _chunkSize = 1;
             let _array_type = Uint8Array;
-
-            switch ( type ) {
-
-                // 1 byte data types
-                case 'uchar':
-                    break;
-                case 'schar':
-                    _array_type = Int8Array;
-                    break;
-                // 2 byte data types
-                case 'ushort':
-                    _array_type = Uint16Array;
-                    _chunkSize = 2;
-                    break;
-                case 'sshort':
-                    _array_type = Int16Array;
-                    _chunkSize = 2;
-                    break;
-                // 4 byte data types
-                case 'uint':
-                    _array_type = Uint32Array;
-                    _chunkSize = 4;
-                    break;
-                case 'sint':
-                    _array_type = Int32Array;
-                    _chunkSize = 4;
-                    break;
-                case 'float':
-                    _array_type = Float32Array;
-                    _chunkSize = 4;
-                    break;
-                case 'complex':
-                    _array_type = Float64Array;
-                    _chunkSize = 8;
-                    break;
-                case 'double':
-                    _array_type = Float64Array;
-                    _chunkSize = 8;
-                    break;
-
-            }
 
             // increase the data pointer in-place
             let _bytes = new _array_type( _data.slice( _dataPointer,
                 _dataPointer += chunks * _chunkSize ) );
 
-            // if required, flip the endianness of the bytes
-            if ( _nativeLittleEndian != _littleEndian ) {
-
-                // we need to flip here since the format doesn't match the native endianness
-                _bytes = flipEndianness( _bytes, _chunkSize );
-
-            }
-
             // return the byte array
             return _bytes;
-
-        }
-
-        //Flips typed array endianness in-place. Based on https://github.com/kig/DataStream.js/blob/master/DataStream.js.
-
-        function flipEndianness( array, chunkSize ) {
-
-            const u8 = new Uint8Array( array.buffer, array.byteOffset, array.byteLength );
-            for ( let i = 0; i < array.byteLength; i += chunkSize ) {
-
-                for ( let j = i + chunkSize - 1, k = i; j > k; j --, k ++ ) {
-
-                    const tmp = u8[ k ];
-                    u8[ k ] = u8[ j ];
-                    u8[ j ] = tmp;
-
-                }
-
-            }
-
-            return array;
 
         }
 
@@ -168,6 +93,7 @@ class NRRDLoader extends Loader {
             for ( _i = 0, _len = lines.length; _i < _len; _i ++ ) {
 
                 l = lines[ _i ];
+                console.log(l)
                 if ( l.match( /NRRD\d+/ ) ) {
 
                     headerObject.isNrrd = true;
@@ -298,7 +224,7 @@ class NRRDLoader extends Loader {
 
         }
 
-        const _bytes = scan( 'uchar', data.byteLength );
+        const _bytes = scan( data.byteLength );
         const _length = _bytes.length;
         let _header = null;
         let _data_start = 0;
@@ -310,6 +236,7 @@ class NRRDLoader extends Loader {
                 // we found two line breaks in a row
                 // now we know what the header is
                 _header = this.parseChars( _bytes, 0, i - 2 );
+                console.log(_header)
                 // this is were the data starts
                 _data_start = i + 1;
                 break;
@@ -320,6 +247,7 @@ class NRRDLoader extends Loader {
 
         // parse the header
         parseHeader( _header );
+                console.log(headerObject)
 
         _data = _bytes.subarray( _data_start ); // the data without header
         if ( headerObject.encoding.substring( 0, 2 ) === 'gz' ) {
