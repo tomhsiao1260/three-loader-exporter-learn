@@ -49,33 +49,22 @@ class NRRDLoader extends Loader {
 
     }
 
-    /**
-     *
-     * @param {boolean} segmentation is a option for user to choose
-     */
-    setSegmentation( segmentation ) {
-
-        this.segmentation = segmentation;
-
-    }
-
     parse( data ) {
 
         // this parser is largely inspired from the XTK NRRD parser : https://github.com/xtk/X
 
         let _data = data;
 
-        const headerObject = {};
-
         //parse the header
         function parseHeader( header ) {
+
+            console.log(header)
 
             let data, field, fn, i, l, m, _i, _len;
             const lines = header.split( /\r?\n/ );
             for ( _i = 0, _len = lines.length; _i < _len; _i ++ ) {
 
                 l = lines[ _i ];
-                console.log(l)
                 if ( l.match( /NRRD\d+/ ) ) {
 
                     headerObject.isNrrd = true;
@@ -218,7 +207,6 @@ class NRRDLoader extends Loader {
                 // we found two line breaks in a row
                 // now we know what the header is
                 _header = this.parseChars( _bytes, 0, i - 2 );
-                console.log(_header)
                 // this is were the data starts
                 _data_start = i + 1;
                 break;
@@ -228,8 +216,8 @@ class NRRDLoader extends Loader {
         }
 
         // parse the header
+        const headerObject = {};
         parseHeader( _header );
-                console.log(headerObject)
 
         _data = _bytes.subarray( _data_start ); // the data without header
         if ( headerObject.encoding.substring( 0, 2 ) === 'gz' ) {
@@ -262,136 +250,16 @@ class NRRDLoader extends Loader {
 
         const volume = new Volume();
         volume.header = headerObject;
-        volume.segmentation = this.segmentation;
         //
         // parse the (unzipped) data to a datastream of the correct type
         //
         volume.data = new headerObject.__array( _data );
-        // get the min and max intensities
-        const min_max = volume.computeMinMax();
-        const min = min_max[ 0 ];
-        const max = min_max[ 1 ];
-        // attach the scalar range to the volume
-        volume.windowLow = min;
-        volume.windowHigh = max;
 
         // get the image dimensions
         volume.dimensions = [ headerObject.sizes[ 0 ], headerObject.sizes[ 1 ], headerObject.sizes[ 2 ] ];
         volume.xLength = volume.dimensions[ 0 ];
         volume.yLength = volume.dimensions[ 1 ];
         volume.zLength = volume.dimensions[ 2 ];
-
-        // Identify axis order in the space-directions matrix from the header if possible.
-        if ( headerObject.vectors ) {
-
-            const xIndex = headerObject.vectors.findIndex( vector => vector[ 0 ] !== 0 );
-            const yIndex = headerObject.vectors.findIndex( vector => vector[ 1 ] !== 0 );
-            const zIndex = headerObject.vectors.findIndex( vector => vector[ 2 ] !== 0 );
-
-            const axisOrder = [];
-
-            if ( xIndex !== yIndex && xIndex !== zIndex && yIndex !== zIndex ) {
-
-                axisOrder[ xIndex ] = 'x';
-                axisOrder[ yIndex ] = 'y';
-                axisOrder[ zIndex ] = 'z';
-
-            } else {
-
-                axisOrder[ 0 ] = 'x';
-                axisOrder[ 1 ] = 'y';
-                axisOrder[ 2 ] = 'z';
-
-            }
-
-            volume.axisOrder = axisOrder;
-
-        } else {
-
-            volume.axisOrder = [ 'x', 'y', 'z' ];
-
-        }
-
-        // spacing
-        const spacingX = new Vector3().fromArray( headerObject.vectors[ 0 ] ).length();
-        const spacingY = new Vector3().fromArray( headerObject.vectors[ 1 ] ).length();
-        const spacingZ = new Vector3().fromArray( headerObject.vectors[ 2 ] ).length();
-        volume.spacing = [ spacingX, spacingY, spacingZ ];
-
-
-        // Create IJKtoRAS matrix
-        volume.matrix = new Matrix4();
-
-        const transitionMatrix = new Matrix4();
-
-        if ( headerObject.space === 'left-posterior-superior' ) {
-
-            transitionMatrix.set(
-                - 1, 0, 0, 0,
-                0, - 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1
-            );
-
-        } else if ( headerObject.space === 'left-anterior-superior' ) {
-
-            transitionMatrix.set(
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, - 1, 0,
-                0, 0, 0, 1
-            );
-
-        }
-
-
-        if ( ! headerObject.vectors ) {
-
-            volume.matrix.set(
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1 );
-
-        } else {
-
-            const v = headerObject.vectors;
-
-            const ijk_to_transition = new Matrix4().set(
-                v[ 0 ][ 0 ], v[ 1 ][ 0 ], v[ 2 ][ 0 ], 0,
-                v[ 0 ][ 1 ], v[ 1 ][ 1 ], v[ 2 ][ 1 ], 0,
-                v[ 0 ][ 2 ], v[ 1 ][ 2 ], v[ 2 ][ 2 ], 0,
-                0, 0, 0, 1
-            );
-
-            const transition_to_ras = new Matrix4().multiplyMatrices( ijk_to_transition, transitionMatrix );
-
-            volume.matrix = transition_to_ras;
-
-        }
-
-        volume.inverseMatrix = new Matrix4();
-        volume.inverseMatrix.copy( volume.matrix ).invert();
-
-        volume.RASDimensions = [
-            Math.floor( volume.xLength * spacingX ),
-            Math.floor( volume.yLength * spacingY ),
-            Math.floor( volume.zLength * spacingZ )
-        ];
-
-        // .. and set the default threshold
-        // only if the threshold was not already set
-        if ( volume.lowerThreshold === - Infinity ) {
-
-            volume.lowerThreshold = min;
-
-        }
-
-        if ( volume.upperThreshold === Infinity ) {
-
-            volume.upperThreshold = max;
-
-        }
 
         return volume;
 
