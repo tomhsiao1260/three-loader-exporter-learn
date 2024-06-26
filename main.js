@@ -3,14 +3,14 @@ import * as THREE from 'three'
 import { OBJLoader } from './handler/OBJLoader'
 import { OBJExporter } from './handler/OBJExporter'
 import { NRRDLoader } from './handler/NRRDLoader'
+import { NRRDExporter } from './handler/NRRDExporter'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 async function handler() {
     const loader_obj = await new OBJLoader().loadAsync('quad.obj')
     console.log('OBJ Loader: ', loader_obj)
 
-    const exporter = new OBJExporter()
-    const exporter_obj = exporter.parse(loader_obj)
+    const exporter_obj = new OBJExporter().parse(loader_obj)
     console.log('OBJ Exporter: ', exporter_obj)
 
     const mesh = loader_obj.children[0]
@@ -18,6 +18,9 @@ async function handler() {
 
     const loader_nrrd = await new NRRDLoader().loadAsync('cube.nrrd')
     console.log('NRRD Loader: ', loader_nrrd)
+
+    const volume = loader_nrrd
+    const exporter_nrrd = new NRRDExporter().parse(volume)
 
     return mesh
 }
