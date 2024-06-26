@@ -163,6 +163,17 @@ class NRRDLoader extends Loader {
         _data = _data.buffer;
 
         const volume = new Volume();
+        volume.header = headerObject;
+        //
+        // parse the (unzipped) data to a datastream of the correct type
+        //
+        volume.data = new headerObject.__array( _data );
+
+        // get the image dimensions
+        volume.dimensions = [ headerObject.sizes[ 0 ], headerObject.sizes[ 1 ], headerObject.sizes[ 2 ] ];
+        volume.xLength = volume.dimensions[ 0 ];
+        volume.yLength = volume.dimensions[ 1 ];
+        volume.zLength = volume.dimensions[ 2 ];
 
         return volume
     }

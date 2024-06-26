@@ -42,6 +42,8 @@ addFace 主要就是把面的位置資訊拼湊出來，內部呼叫 addVertex �
 
 ## NRRDLoader
 
+主要會把 `.nrrd` 以 ArrayBuffer 的方式解析，並分出 header 和 data 本身，這些資料最後再整合進 threejs 內建的 Volume 這個類別，並回傳結果
+
 #### load
 
 跟 OBJLoader 的 load 部分幾乎相同，透過 FileLoader 讀取資料，並傳給 parse 做後續處理，不同的是，資料會以 ArrayBuffer 的方式讀取
@@ -67,6 +69,8 @@ encoding: gzi
 另外 `_header` 字串還會透過 parseHeader 方法把資料依序寫入 headerObject，形成 key/value 對方便讀取。在 headerObject 內，比較特別的 key 會透過 `_fieldFunctions` 處理，好比說 type 屬性還會另外產生一個 `__array` 屬性出來， sizes 屬性會把大小 x, y, z 大了放進一個 list 裡面儲存
 
 再來是 header 以外的資料本身，以編碼方式為 'gz' 為例，會先把資料做解壓縮，用到了一個叫 fflate 的函式庫，解壓後會把對應的 ArrayBuffer 拿去做後續的處理
+
+最後會把 header 和解壓後的資料一一放進 threejs 自定義的 Volume 這個 class，並回傳這個類別，好比說 headerObject 會在 volume.header，資料本身會在 volume.data 裡，還有一些屬性可以看程式碼一一比對
 
 
 
