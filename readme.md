@@ -44,7 +44,13 @@ addFace 主要就是把面的位置資訊拼湊出來，內部呼叫 addVertex �
 
 #### load
 
-跟 OBJLoader 的 load 部分幾乎相同，透過 FileLoader 讀取資料，並傳給 parse 做後續處理
+跟 OBJLoader 的 load 部分幾乎相同，透過 FileLoader 讀取資料，並傳給 parse 做後續處理，不同的是，資料會以 ArrayBuffer 的方式讀取
+
+#### parse
+
+一開始會先把 ArrayBuffer 轉成 Uint8Array，也就是 0 到 255 的陣列。因為 NRRD 內部前半段是 header，後半段才是資料，中間會跨兩行做間隔。而換行值為 10，所以如果連續發現 Uint8Array 內有兩個 10，那就可以把 header 和資料本身切出來。header 的部分會透過 parseChars 方法裡的 String.fromCharCode 解析，打印出來就是可以讀取的字串資訊
+
+
 
 
 
