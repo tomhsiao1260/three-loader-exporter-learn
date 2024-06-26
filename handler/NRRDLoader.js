@@ -34,6 +34,35 @@ class NRRDLoader extends Loader {
         // uchar: 1 byte data types
         let _data = data;
 
+        //parse the header
+        function parseHeader( header ) {
+
+            console.log('header: ', header);
+
+            let data, field, l, m, _i, _len;
+            const lines = header.split( /\r?\n/ );
+            for ( _i = 0, _len = lines.length; _i < _len; _i ++ ) {
+
+                l = lines[ _i ];
+                if ( l.match( /NRRD\d+/ ) ) {
+
+                    headerObject.isNrrd = true;
+
+                } else if ( ! l.match( /^#/ ) && ( m = l.match( /(.*):(.*)/ ) ) ) {
+
+                    field = m[ 1 ].trim();
+                    data = m[ 2 ].trim();
+
+                    headerObject[ field ] = data;
+
+                }
+
+            }
+
+            console.log('headerObject: ', headerObject);
+
+        }
+
         const _bytes = new Uint8Array(_data);
         const _length = _bytes.length;
         let _header = null;
@@ -58,6 +87,10 @@ class NRRDLoader extends Loader {
         console.log('NRRD header: ', _header);
         console.log('Data Length: ', _bytes.length);
         console.log('Data starting index: ', _data_start);
+
+        // parse the header
+        const headerObject = {};
+        parseHeader( _header );
 
         return data
     }
