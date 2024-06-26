@@ -59,6 +59,47 @@ class NRRDLoader extends Loader {
 
             }
 
+            if ( ! headerObject.isNrrd ) {
+
+                throw new Error( 'Not an NRRD file' );
+
+            }
+
+            if ( headerObject.encoding === 'bz2' || headerObject.encoding === 'bzip2' ) {
+
+                throw new Error( 'Bzip is not supported' );
+
+            }
+
+            if ( ! headerObject.vectors ) {
+
+                //if no space direction is set, let's use the identity
+                headerObject.vectors = [ ];
+                headerObject.vectors.push( [ 1, 0, 0 ] );
+                headerObject.vectors.push( [ 0, 1, 0 ] );
+                headerObject.vectors.push( [ 0, 0, 1 ] );
+
+                //apply spacing if defined
+                if ( headerObject.spacings ) {
+
+                    for ( i = 0; i <= 2; i ++ ) {
+
+                        if ( ! isNaN( headerObject.spacings[ i ] ) ) {
+
+                            for ( let j = 0; j <= 2; j ++ ) {
+
+                                headerObject.vectors[ i ][ j ] *= headerObject.spacings[ i ];
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
             console.log('headerObject: ', headerObject);
 
         }

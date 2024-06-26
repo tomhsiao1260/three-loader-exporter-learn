@@ -64,7 +64,7 @@ sizes: 2 3 5
 encoding: gzi
 ```
 
-另外 `_header` 字串還會透過 parseHeader 方法把資料依序寫入 headerObject，形成 key/value 對方便讀取。
+另外 `_header` 字串還會透過 parseHeader 方法把資料依序寫入 headerObject，形成 key/value 對方便讀取
 
 
 
