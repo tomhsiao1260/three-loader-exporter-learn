@@ -65,25 +65,7 @@ class NRRDLoader extends Loader {
 
         let _data = data;
 
-        let _dataPointer = 0;
-
         const headerObject = {};
-
-        function scan( chunks ) {
-
-            // uchar: 1 byte data types
-
-            let _chunkSize = 1;
-            let _array_type = Uint8Array;
-
-            // increase the data pointer in-place
-            let _bytes = new _array_type( _data.slice( _dataPointer,
-                _dataPointer += chunks * _chunkSize ) );
-
-            // return the byte array
-            return _bytes;
-
-        }
 
         //parse the header
         function parseHeader( header ) {
@@ -224,7 +206,7 @@ class NRRDLoader extends Loader {
 
         }
 
-        const _bytes = scan( data.byteLength );
+        const _bytes = new Uint8Array(_data);
         const _length = _bytes.length;
         let _header = null;
         let _data_start = 0;
