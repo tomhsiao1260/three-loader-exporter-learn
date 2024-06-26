@@ -6,6 +6,8 @@ import {
     Vector3
 } from 'three';
 
+import * as fflate from '../libs/fflate.module.js';
+
 class NRRDLoader extends Loader {
     constructor( manager ) {
 
@@ -36,8 +38,6 @@ class NRRDLoader extends Loader {
 
         //parse the header
         function parseHeader( header ) {
-
-            console.log('header: ', header);
 
             let data, field, fn, l, m, _i, _len;
             const lines = header.split( /\r?\n/ );
@@ -108,8 +108,6 @@ class NRRDLoader extends Loader {
 
             }
 
-            console.log('headerObject: ', headerObject);
-
         }
 
         const _bytes = new Uint8Array(_data);
@@ -133,15 +131,26 @@ class NRRDLoader extends Loader {
 
         }
 
-        console.log('NRRD header: ', _header);
-        console.log('Data Length: ', _bytes.length);
-        console.log('Data starting index: ', _data_start);
-
         // parse the header
         const headerObject = {};
         parseHeader( _header );
 
-        return data
+        _data = _bytes.subarray( _data_start ); // the data without header
+        console.log('before gzip decompress: ', _data)
+
+        if ( headerObject.encoding.substring( 0, 2 ) === 'gz' ) {
+
+            // we need to decompress the datastream
+            // here we start the unzipping and get a typed Uint8Array back
+            _data = fflate.gunzipSync( new Uint8Array( _data ) );
+
+        }
+        console.log('After gzip decompress: ', _data)
+
+        // .. let's use the underlying array buffer
+        _data = _data.buffer;
+
+        return _data
     }
 
     parseChars( array, start, end ) {

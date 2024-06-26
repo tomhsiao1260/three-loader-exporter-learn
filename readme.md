@@ -66,6 +66,8 @@ encoding: gzi
 
 另外 `_header` 字串還會透過 parseHeader 方法把資料依序寫入 headerObject，形成 key/value 對方便讀取。在 headerObject 內，比較特別的 key 會透過 `_fieldFunctions` 處理，好比說 type 屬性還會另外產生一個 `__array` 屬性出來， sizes 屬性會把大小 x, y, z 大了放進一個 list 裡面儲存
 
+再來是 header 以外的資料本身，以編碼方式為 'gz' 為例，會先把資料做解壓縮，用到了一個叫 fflate 的函式庫，解壓後會把對應的 ArrayBuffer 拿去做後續的處理
+
 
 
 
