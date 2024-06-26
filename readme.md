@@ -64,7 +64,7 @@ sizes: 2 3 5
 encoding: gzi
 ```
 
-另外 `_header` 字串還會透過 parseHeader 方法把資料依序寫入 headerObject，形成 key/value 對方便讀取
+另外 `_header` 字串還會透過 parseHeader 方法把資料依序寫入 headerObject，形成 key/value 對方便讀取。在 headerObject 內，比較特別的 key 會透過 `_fieldFunctions` 處理，好比說 type 屬性還會另外產生一個 `__array` 屬性出來， sizes 屬性會把大小 x, y, z 大了放進一個 list 裡面儲存
 
 
 

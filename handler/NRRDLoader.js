@@ -39,7 +39,7 @@ class NRRDLoader extends Loader {
 
             console.log('header: ', header);
 
-            let data, field, l, m, _i, _len;
+            let data, field, fn, l, m, _i, _len;
             const lines = header.split( /\r?\n/ );
             for ( _i = 0, _len = lines.length; _i < _len; _i ++ ) {
 
@@ -52,8 +52,16 @@ class NRRDLoader extends Loader {
 
                     field = m[ 1 ].trim();
                     data = m[ 2 ].trim();
+                    fn = _fieldFunctions[ field ];
+                    if ( fn ) {
 
-                    headerObject[ field ] = data;
+                        fn.call( headerObject, data );
+
+                    } else {
+
+                        headerObject[ field ] = data;
+
+                    }
 
                 }
 
@@ -164,5 +172,68 @@ class NRRDLoader extends Loader {
 
     }
 }
+
+const _fieldFunctions = {
+
+    type: function ( data ) {
+
+        switch ( data ) {
+
+            case 'uchar':
+            case 'uint8':
+            case 'uint8_t':
+                this.__array = Uint8Array;
+                break;
+            case 'int16':
+            case 'int16_t':
+                this.__array = Int16Array;
+                break;
+            case 'uint16':
+            case 'uint16_t':
+                this.__array = Uint16Array;
+                break;
+            default:
+                throw new Error( 'Unsupported NRRD data type: ' + data );
+
+        }
+
+        return this.type = data;
+
+    },
+
+    encoding: function ( data ) {
+
+        return this.encoding = data;
+
+    },
+
+    dimension: function ( data ) {
+
+        return this.dim = parseInt( data, 10 );
+
+    },
+
+    sizes: function ( data ) {
+
+        let i;
+        return this.sizes = ( function () {
+
+            const _ref = data.split( /\s+/ );
+            const _results = [];
+
+            for ( let _i = 0, _len = _ref.length; _i < _len; _i ++ ) {
+
+                i = _ref[ _i ];
+                _results.push( parseInt( i, 10 ) );
+
+            }
+
+            return _results;
+
+        } )();
+
+    },
+
+};
 
 export { NRRDLoader };
