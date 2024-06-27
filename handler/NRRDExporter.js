@@ -1,5 +1,7 @@
 import * as fflate from '../libs/fflate.module.js';
 
+// https://github.com/mrdoob/three.js/issues/8254
+
 class NRRDExporter {
 
     parse( volume ) {
