@@ -72,6 +72,12 @@ encoding: gzi
 
 最後會把 header 和解壓後的資料一一放進 threejs 自定義的 Volume 這個 class，並回傳這個類別，好比說 headerObject 會在 volume.header，資料本身會在 volume.data 裡，還有一些屬性可以看程式碼一一比對
 
+## NRRDExporter
+
+我自己實作的 exporter，會以 `.nrrd` 作為輸入，parse 方法的輸入是 NRRDLoader 輸出的 Volume 這個 class，而 exporter 本身會從這個 class 裡把 header, data 提取出來，寫進一個 ArrayBuffer 裡面，最後這個結果會以 Blob 輸出，方便後續用 writeFile 方法儲存
+
+另外，因為在 Loader 那裡有做過一次 'gz' 解壓，所以儲存時會用 gzipSync 方法壓縮回去
+
 
 
 
