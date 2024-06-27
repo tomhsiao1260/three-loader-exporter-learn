@@ -11,7 +11,6 @@ class NRRDExporter {
 
         // Todo: should save whole header string into header when parsing it
         let headerText = ''
-
         headerText += 'NRRD0005\n'
         headerText += `type: ${header.type}\n`
         headerText += `dimension: ${header.dim}\n`
@@ -22,30 +21,19 @@ class NRRDExporter {
         // write header info into buffer
         const codes = Array.from(headerText, char => char.charCodeAt(0));
         const buffer = new ArrayBuffer(codes.length);
-        const bytes1 = new Uint8Array(buffer);
-        for ( let i = 0; i < codes.length; i++ ) { bytes1[i] = codes[i]; }
-
+        const headerBytes = new Uint8Array(buffer);
+        for ( let i = 0; i < codes.length; i++ ) { headerBytes[i] = codes[i]; }
         // write data info into buffer (compress it as well)
-        const bytes2 = fflate.gzipSync(data);
+        // Todo: only deal with 'gz' encoding case, should support 'ascii', 'raw' as well
+        const dataBytes = fflate.gzipSync(data);
         // merge header & data info
-        const bytes = mergeUint8Arrays(bytes1, bytes2);
+        const bytes = new Uint8Array([ ...headerBytes, ...dataBytes ]);
         // save it
         output = new Blob( [ bytes ], { type: 'application/octet-stream' } );
 
         return output
 
     }
-}
-
-function mergeUint8Arrays(array1, array2) {
-
-    const mergedArray = new Uint8Array(array1.length + array2.length);
-
-    mergedArray.set(array1, 0);
-    mergedArray.set(array2, array1.length);
-
-    return mergedArray;
-
 }
 
 export { NRRDExporter };
