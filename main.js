@@ -21,8 +21,19 @@ async function handler() {
 
     const volume = loader_nrrd
     const exporter_nrrd = new NRRDExporter().parse(volume)
+    console.log('NRRD Exporter: ', exporter_nrrd)
+
+    const saveDOM = document.querySelector('.save');
+    saveDOM.addEventListener('click', () => writeFile(exporter_nrrd))
 
     return mesh
+}
+
+async function writeFile(contents) {
+    const fileHandle = await window.showSaveFilePicker();
+    const writable = await fileHandle.createWritable();
+    await writable.write(contents);
+    await writable.close();
 }
 
 const sizes = {

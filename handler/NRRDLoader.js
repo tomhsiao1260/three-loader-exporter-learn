@@ -58,8 +58,6 @@ class NRRDLoader extends Loader {
         //parse the header
         function parseHeader( header ) {
 
-            console.log(header)
-
             let data, field, fn, i, l, m, _i, _len;
             const lines = header.split( /\r?\n/ );
             for ( _i = 0, _len = lines.length; _i < _len; _i ++ ) {
